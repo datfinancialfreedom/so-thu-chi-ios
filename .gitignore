@@ -1,1 +1,32 @@
-IyBOb2RlCm5vZGVfbW9kdWxlcy8KbnBtLWRlYnVnLmxvZyoKeWFybi1kZWJ1Zy5sb2cqCnlhcm4tZXJyb3IubG9nKgoKIyBDYXBhY2l0b3IgLyBpT1MgKMSRxrDhu6NjIHThuqFvIGzhuqFpIGLhurFuZzogbnB4IGNhcCBhZGQgaW9zIC8gbnB4IGNhcCBzeW5jKQppb3MvQXBwL1BvZHMvCmlvcy9EZXJpdmVkRGF0YS8KaW9zLy5nZW5lcmF0ZWQvCioueGN3b3Jrc3BhY2UveGN1c2VyZGF0YS8KKi54Y29kZXByb2oveGN1c2VyZGF0YS8KeGN1c2VyZGF0YS8KRGVyaXZlZERhdGEvCiouaXBhCiouZFNZTS56aXAKKi5kU1lNCgojIEtow7RuZyBiYW8gZ2nhu50gY29tbWl0IC8gY2hpYSBz4bq7IGNo4bupbmcgY2jhu4kga8O9IHbDoCBraMOzYSBiw60gbeG6rXQKKi5wMTIKKi5tb2JpbGVwcm92aXNpb24KKi5jZXIKKi5rZXkKKi5wZW0KCiMgbWFjT1MKLkRTX1N0b3JlCgojIFRyw6xuaCBzb+G6oW4gdGjhuqNvCi5pZGVhLwoudnNjb2RlLwoqLnN3cAo=
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Capacitor / iOS (được tạo lại bằng: npx cap add ios / npx cap sync)
+ios/App/Pods/
+ios/DerivedData/
+ios/.generated/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Không bao giờ commit / chia sẻ chứng chỉ ký và khóa bí mật
+*.p12
+*.mobileprovision
+*.cer
+*.key
+*.pem
+
+# macOS
+.DS_Store
+
+# Trình soạn thảo
+.idea/
+.vscode/
+*.swp
