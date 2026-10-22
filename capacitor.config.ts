@@ -1,1 +1,19 @@
-aW1wb3J0IHR5cGUgeyBDYXBhY2l0b3JDb25maWcgfSBmcm9tICdAY2FwYWNpdG9yL2NsaSc7Cgpjb25zdCBjb25maWc6IENhcGFjaXRvckNvbmZpZyA9IHsKICBhcHBJZDogJ3ZuLnNvdGh1Y2hpLmFwcCcsCiAgYXBwTmFtZTogJ1Phu5UgVGh1IENoaScsCiAgd2ViRGlyOiAnd3d3JywKICBpb3M6IHsKICAgIC8vIEhp4buDbiB0aOG7iyBu4buZaSBkdW5nIHRyw6BuIHThu5tpIG3DqXAgbcOgbiBow6xuaCAodGFpIHRo4buPIC8gRHluYW1pYyBJc2xhbmQpCiAgICBjb250ZW50SW5zZXQ6ICdhbHdheXMnLAogICAgLy8gS2jDtG5nIGTDuW5nIHNjcm9sbCB2aWV3IGJhbyBuZ2/DoGkgY+G7p2EgaU9TLCDEkeG7gyB3ZWIgYXBwIHThu7EgY3Xhu5luCiAgICBzY3JvbGxFbmFibGVkOiBmYWxzZQogIH0sCiAgc2VydmVyOiB7CiAgICAvLyBLaMO0bmcgbG9hZCB04burIHNlcnZlciBuZ2/DoGk6IHRvw6BuIGLhu5kgYXBwIG7hurFtIHRyb25nIHRoxrAgbeG7pWMgd3d3LyBj4bunYSBjaMOtbmggYXBwCiAgICBhbmRyb2lkU2NoZW1lOiAnaHR0cHMnCiAgfQp9OwoKZXhwb3J0IGRlZmF1bHQgY29uZmlnOwo=
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'vn.sothuchi.app',
+  appName: 'Sổ Thu Chi',
+  webDir: 'www',
+  ios: {
+    // Hiển thị nội dung tràn tới mép màn hình (tai thỏ / Dynamic Island)
+    contentInset: 'always',
+    // Không dùng scroll view bao ngoài của iOS, để web app tự cuộn
+    scrollEnabled: false
+  },
+  server: {
+    // Không load từ server ngoài: toàn bộ app nằm trong thư mục www/ của chính app
+    androidScheme: 'https'
+  }
+};
+
+export default config;
