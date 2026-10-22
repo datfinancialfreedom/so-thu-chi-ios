@@ -1,0 +1,107 @@
+# Build Sổ Thu Chi cho iOS trên máy Mac đám mây của GitHub Actions
+# Kết quả: file .ipa CHƯA KÝ (unsigned) + thư mục .app, tải về ở mục Artifacts.
+# File chưa ký sẽ KHÔNG cài thẳng lên iPhone được: cần ký lại bằng Apple ID
+# cá nhân (Sideloadly / AltStore / SideStore) hoặc bằng Xcode trên máy Mac.
+# Xem mục "KHÔNG CÓ MAC THÌ LÀM SAO?" trong README-HUONG-DAN.md.
+
+name: Build iOS (chưa ký)
+
+"on":
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "www/**"
+      - "package.json"
+      - "capacitor.config.ts"
+      - ".github/workflows/build-ios.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Build trên macOS
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Hiển thị phiên bản công cụ
+        run: |
+          node --version
+          npm --version
+          xcodebuild -version
+
+      - name: Cài dependencies
+        run: npm install
+
+      - name: Tạo thư mục ios nếu chưa có
+        run: |
+          if [ ! -d "ios" ]; then
+            echo "Chưa có thư mục ios/ — đang tạo bằng Capacitor..."
+            npx cap add ios
+          else
+            echo "Đã có thư mục ios/, bỏ qua bước cap add ios."
+          fi
+
+      - name: Đồng bộ web app vào project iOS
+        run: npx cap sync ios
+
+      - name: Build bằng xcodebuild (không ký)
+        run: |
+          set -e
+          cd ios/App
+          if [ -d "App.xcworkspace" ]; then
+            BUILD_TARGET="-workspace App.xcworkspace"
+          else
+            BUILD_TARGET="-project App.xcodeproj"
+          fi
+          echo "Build target: $BUILD_TARGET"
+          # Cố ý tắt ký: CODE_SIGNING_ALLOWED=NO để ai cũng build được
+          # mà không cần chứng chỉ nhà phát triển của Apple.
+          xcodebuild $BUILD_TARGET \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath "$GITHUB_WORKSPACE/build/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Đóng gói .app và .ipa chưa ký
+        run: |
+          set -e
+          APP_PATH="$(find build/DerivedData/Build/Products -name '*.app' -type d | head -n 1)"
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::Không tìm thấy file .app sau khi build"
+            exit 1
+          fi
+          echo "Tìm thấy: $APP_PATH"
+          mkdir -p dist/Payload
+          cp -R "$APP_PATH" "dist/Payload/"
+          # Bản sao riêng của thư mục .app (nén lại)
+          ditto -c -k --keepParent "$APP_PATH" "dist/SoThuChi-app.zip"
+          # .ipa chưa ký = file zip chứa thư mục Payload/<App>.app
+          (cd dist && zip -r "SoThuChi-unsigned.ipa" Payload)
+          ls -lh dist/
+
+      - name: Tải kết quả lên Artifacts để tải về
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoThuChi-iOS-unsigned
+          path: |
+            dist/SoThuChi-unsigned.ipa
+            dist/SoThuChi-app.zip
+          if-no-files-found: error
+          retention-days: 14
