@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-title" content="Sổ Thu Chi">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Sổ Thu Chi</title>
+<style>
+:root{--teal:#0f766e;--teal2:#14b8a6;--bg:#f6f7f9;--card:#fff;--ink:#17202a;--muted:#6b7280;--red:#dc2626;--green:#059669;--amber:#d97706;--line:#e5e7eb;--radius:16px}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Be Vietnam Pro",Arial,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:86px}
+header{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 18px;border-radius:0 0 22px 22px}
+header h1{margin:0;font-size:20px} header p{margin:4px 0 0;opacity:.9;font-size:13px}
+main{max-width:720px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.balance{font-size:30px;font-weight:800;margin:6px 0}
+.row{display:flex;gap:10px} .row>*{flex:1}
+.kpi{text-align:center} .kpi b{display:block;font-size:17px;margin-top:4px}
+.muted{color:var(--muted);font-size:13px} .green{color:var(--green)} .red{color:var(--red)}
+h2{font-size:16px;margin:4px 0 10px} h3{font-size:14px;margin:10px 0 6px}
+.item{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)} .item:last-child{border-bottom:0}
+.item .amt{font-weight:700;white-space:nowrap}
+.bar{height:9px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:6px} .bar i{display:block;height:100%;background:var(--teal2)} .bar i.over{background:var(--red)} .bar i.warn{background:var(--amber)}
+button{border:0;border-radius:12px;padding:10px 14px;font-size:14px;cursor:pointer;background:#eef2f2;color:var(--ink)} button.primary{background:var(--teal);color:#fff;font-weight:700} button.danger{background:#fee2e2;color:var(--red)} button.small{padding:6px 10px;font-size:12px}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;font-size:15px;background:#fff;margin:4px 0 10px}
+label{font-size:13px;color:var(--muted)}
+nav.tabbar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:20}
+nav.tabbar button{flex:1;background:none;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px} nav.tabbar button.active{color:var(--teal);font-weight:700} nav.tabbar .ic{font-size:20px}
+.fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--teal);color:#fff;font-size:28px;box-shadow:0 8px 20px rgba(15,118,110,.35);z-index:21}
+section.tab{display:none} section.tab.active{display:block}
+dialog{border:0;border-radius:18px;width:min(94vw,480px);max-height:88vh;overflow:auto;padding:18px} dialog::backdrop{background:rgba(0,0,0,.45)}
+.chip{display:inline-block;padding:3px 9px;border-radius:99px;background:#ecfdf5;color:var(--teal);font-size:12px;font-weight:600}
+.empty{text-align:center;color:var(--muted);padding:22px 8px;font-size:14px}
+.search{margin-bottom:4px}
+
+.jar-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:560px){.jar-grid{grid-template-columns:repeat(3,1fr)}}
+.jar-card{border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.jar-visual{position:relative;width:76px;height:92px;margin:8px auto;border:3px solid #9ca3af;border-top:9px solid #6b7280;border-radius:8px 8px 20px 20px;overflow:hidden;background:#f9fafb}
+.jar-fill{position:absolute;left:0;right:0;bottom:0;transition:height .45s ease}
+.jar-pct{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#111827;text-shadow:0 1px 0 rgba(255,255,255,.75)}
+.pct-row{display:flex;gap:8px;align-items:center;margin:4px 0}.pct-row label{flex:1}.pct-row input{width:92px;flex:0 0 92px;margin:0}
+@media(min-width:721px){nav.tabbar{max-width:720px;left:50%;transform:translateX(-50%);border-radius:16px 16px 0 0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📒 Sổ Thu Chi</h1>
+  <p>Quản lý tài chính cá nhân · Tiền Việt (VNĐ) · Dữ liệu lưu ngay trên máy của bạn</p>
+</header>
+<main>
+
+<!-- ============ TỔNG QUAN ============ -->
+<section class="tab active" id="tab-home">
+  <div class="card">
+    <div class="muted">Tổng số dư các ví</div>
+    <div class="balance" id="totalBalance">0₫</div>
+    <div class="row">
+      <div class="kpi">Thu tháng này<b class="green" id="monthIncome">0₫</b></div>
+      <div class="kpi">Chi tháng này<b class="red" id="monthExpense">0₫</b></div>
+      <div class="kpi">Tài sản ròng<b id="netWorth">0₫</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>💼 Ví của tôi</h2>
+    <div id="walletList"></div>
+  </div>
+  <div class="card">
+    <h2>🫙 Hũ của tôi</h2>
+    <div id="homeJarSummary"></div>
+    <button style="margin-top:8px" onclick="showTab('tab-jars', document.querySelector('[data-tab=tab-jars]'))">Mở mục Hũ</button>
+  </div>
+  <div class="card">
+    <h2>💎 Tài sản tiết kiệm</h2>
+    <div class="row">
+      <div class="kpi">Vàng<b id="assetGold">0₫</b></div>
+      <div class="kpi">Sổ tiết kiệm<b id="assetSavings">0₫</b></div>
+      <div class="kpi">Chứng chỉ tiền gửi<b id="assetCd">0₫</b></div>
+    </div>
+    <p class="muted" id="assetNote"></p>
+  </div>
+  <div class="card">
+    <h2>🕘 Giao dịch gần đây</h2>
+    <div id="recentList"></div>
+  </div>
+  <div class="card">
+    <h2>📊 Chi theo danh mục (tháng này)</h2>
+    <div id="reportByCategory"></div>
+  </div>
+</section>
+
+<!-- ============ GIAO DỊCH ============ -->
+<section class="tab" id="tab-tx">
+  <div class="card">
+    <h2>📋 Tất cả giao dịch</h2>
+    <input class="search" id="txSearch" type="search" placeholder="Tìm theo ghi chú / danh mục…" oninput="renderTransactions()">
+    <div class="row">
+      <select id="txFilterType" onchange="renderTransactions()"><option value="">Tất cả loại</option><option value="thu">Thu</option><option value="chi">Chi</option></select>
+      <select id="txFilterWallet" onchange="renderTransactions()"></select>
+    </div>
+    <div id="txList"></div>
+  </div>
+</section>
+
+<!-- ============ NGÂN SÁCH ============ -->
+<section class="tab" id="tab-budget">
+  <div class="card">
+    <h2>🎯 Ngân sách tháng này</h2>
+    <div id="budgetList"></div>
+    <h3>Đặt / sửa ngân sách</h3>
+    <label>Danh mục chi</label><select id="budgetCategory"></select>
+    <label>Hạn mức (VNĐ)</label><input id="budgetLimit" type="number" inputmode="numeric" min="0" placeholder="VD: 3000000">
+    <button class="primary" onclick="saveBudget()">Lưu ngân sách</button>
+  </div>
+</section>
+
+<!-- ============ TÀI SẢN ============ -->
+<section class="tab" id="tab-assets">
+  <div class="card">
+    <h2>💎 Vàng, sổ tiết kiệm &amp; chứng chỉ tiền gửi</h2>
+    <div id="assetList"></div>
+    <button class="primary" onclick="openAssetDialog()">+ Thêm sản phẩm</button>
+  </div>
+  <div class="card">
+    <h2>🏁 Mục tiêu tiết kiệm</h2>
+    <div id="goalList"></div>
+    <h3>Thêm mục tiêu</h3>
+    <label>Tên mục tiêu</label><input id="goalName" placeholder="VD: Quỹ dự phòng, Du lịch…">
+    <label>Số tiền mục tiêu (VNĐ)</label><input id="goalTarget" type="number" inputmode="numeric" min="0">
+    <button class="primary" onclick="addGoal()">Thêm mục tiêu</button>
+  </div>
+</section>
+
+<!-- ============ HŨ (6 JARS) ============ -->
+<section class="tab" id="tab-jars">
+  <div class="card">
+    <h2>🫙 6 chiếc hũ tài chính (JARS)</h2>
+    <p class="muted">Ví là nơi tiền thật nằm (Tiền mặt / Ngân hàng). Hũ là lớp phân bổ mục đích trên cùng số tiền đó: mỗi khoản thu tự chia vào 6 hũ, mỗi khoản chi trừ đúng hũ đã chọn.</p>
+    <div id="jarRecon" style="margin-bottom:10px"></div>
+    <div class="jar-grid" id="jarGrid"></div>
+  </div>
+  <div class="card">
+    <h2>📊 Thống kê hũ tháng này</h2>
+    <div id="jarStats"></div>
+    <h3>Lịch sử phân bổ gần đây</h3>
+    <div id="jarAllocHistory"></div>
+  </div>
+  <div class="card">
+    <h2>🔀 Chuyển tiền giữa các hũ</h2>
+    <label>Từ hũ</label><select id="jarFrom"></select>
+    <label>Sang hũ</label><select id="jarTo"></select>
+    <label>Số tiền (VNĐ)</label><input id="jarTransferAmount" type="number" inputmode="numeric" min="0" placeholder="VD: 500000">
+    <label>Lý do (bắt buộc)</label><input id="jarTransferReason" placeholder="VD: Tiền nhà tháng này tăng, lấy tạm từ hũ Hưởng thụ">
+    <button class="primary" onclick="doJarTransfer()">Chuyển hũ</button>
+    <h3>Lịch sử chuyển hũ</h3>
+    <div id="jarTransferList"></div>
+  </div>
+  <div class="card">
+    <h2>⚙️ Cài đặt chia hũ</h2>
+    <label style="display:flex;align-items:center;gap:8px;color:var(--ink);font-size:14px"><input type="checkbox" id="jarAutoToggle" style="width:auto;margin:0"> Tự động chia mọi khoản thu vào 6 hũ</label>
+    <p class="muted">Tỷ lệ % từng hũ — tổng bắt buộc đúng 100%. Tỷ lệ mới chỉ áp dụng cho các khoản thu từ bây giờ, không chia lại các khoản thu cũ.</p>
+    <div class="pct-row"><label>🏠 Nhu cầu thiết yếu (NEC)</label><input id="pct-NEC" type="number" min="0" max="100"></div>
+    <div class="pct-row"><label>🐷 Tiết kiệm dài hạn (LTSS)</label><input id="pct-LTSS" type="number" min="0" max="100"></div>
+    <div class="pct-row"><label>📈 Tự do tài chính (FFA)</label><input id="pct-FFA" type="number" min="0" max="100"></div>
+    <div class="pct-row"><label>📚 Giáo dục (EDU)</label><input id="pct-EDU" type="number" min="0" max="100"></div>
+    <div class="pct-row"><label>🎉 Hưởng thụ (PLAY)</label><input id="pct-PLAY" type="number" min="0" max="100"></div>
+    <div class="pct-row"><label>🎁 Cho đi (GIVE)</label><input id="pct-GIVE" type="number" min="0" max="100"></div>
+    <button class="primary" onclick="saveJarSettings()">Lưu cài đặt hũ</button>
+  </div>
+  <div class="card">
+    <h2>📖 Hướng dẫn dùng hũ</h2>
+    <p class="muted">Phương pháp 6 chiếc hũ (JARS) do T. Harv Eker phổ biến: thay vì tiêu tiền rồi mới nghĩ, bạn chia thu nhập thành 6 phần có mục đích rõ ràng ngay khi tiền về. Thói quen quan trọng hơn số tiền — thu nhập ít vẫn áp dụng được vì mọi thứ tính theo tỷ lệ %.</p>
+    <h3>6 hũ gồm những gì?</h3>
+    <p>🏠 <b>Nhu cầu thiết yếu (NEC) — 55%:</b> ăn uống, nhà ở, đi lại, hoá đơn, điện nước, nhu cầu sống cơ bản. Cố gắng giữ chi thiết yếu trong phần này.</p>
+    <p>🐷 <b>Tiết kiệm dài hạn (LTSS) — 10%:</b> quỹ dự phòng và các mục tiêu lớn: mua xe, mua nhà, du lịch lớn, việc hệ trọng. Chỉ tiêu cho mục tiêu đã định, không tiêu vặt.</p>
+    <p>📈 <b>Tự do tài chính (FFA) — 10%:</b> tiền để đầu tư tạo thu nhập thụ động (gửi tiết kiệm, mua vàng, đầu tư…). Nguyên tắc vàng: <b>không tiêu vào tiền gốc</b> — hũ này là con ngỗng đẻ trứng vàng.</p>
+    <p>📚 <b>Giáo dục (EDU) — 10%:</b> sách, khoá học, kỹ năng, chứng chỉ — đầu tư vào chính bản thân bạn.</p>
+    <p>🎉 <b>Hưởng thụ (PLAY) — 10%:</b> ăn ngon, giải trí, tự thưởng mà không áy náy. Theo phương pháp gốc, hũ này nên được tiêu trong tháng để nạp lại năng lượng.</p>
+    <p>🎁 <b>Cho đi (GIVE) — 5%:</b> từ thiện, giúp đỡ người thân, quà tặng. Cho đi cũng là một phần của tài chính lành mạnh.</p>
+    <h3>Cơ chế Ví ↔ Hũ trong app</h3>
+    <p><b>Ví là nơi tiền thật nằm</b> — bạn chỉ cần 2 ví: Tiền mặt và Ngân hàng. <b>Hũ là lớp phân bổ mục đích</b> nằm trên số tiền đó. Một đồng tiền luôn đồng thời ở trong 1 ví và thuộc về 1 hũ.</p>
+    <p><b>Ví dụ khoản THU:</b> Lương 20.000.000₫ về ví Ngân hàng → app tự chia vào hũ: Thiết yếu 11.000.000₫, Tiết kiệm dài hạn 2.000.000₫, Tự do tài chính 2.000.000₫, Giáo dục 2.000.000₫, Hưởng thụ 2.000.000₫, Cho đi 1.000.000₫. Tiền vẫn nằm ở ví Ngân hàng; các hũ chỉ ghi rõ mỗi phần tiền được phép dùng vào việc gì.</p>
+    <p><b>Ví dụ khoản CHI:</b> Ăn trưa 500.000₫, chọn ví Tiền mặt và hũ Nhu cầu thiết yếu → ví Tiền mặt giảm 500.000₫ <b>và</b> hũ Thiết yếu cũng giảm 500.000₫. Năm hũ còn lại không thay đổi.</p>
+    <h3>Nguyên tắc cần nhớ</h3>
+    <p>• <b>Không vay mượn giữa các hũ:</b> chi vượt số dư hũ đã chọn thì app cảnh báo và khoá nút lưu, không tự lấy hũ khác bù. Nếu thật sự cần, hãy dùng mục Chuyển hũ và ghi rõ lý do.</p>
+    <p>• <b>Dòng đối chiếu luôn có sẵn:</b> Tổng số dư ví = Tổng số dư 6 hũ + phần Chưa phân bổ. Phần chưa phân bổ là tiền của các khoản thu không bật tự chia (hoặc giao dịch cũ trước khi có tính năng Hũ) — tiền vẫn an toàn trong ví, chỉ là chưa được gán mục đích.</p>
+    <p>• Sửa hoặc xoá một khoản thu/chi, các hũ tự hoàn lại đúng số đã chia/đã trừ của khoản đó.</p>
+  </div>
+</section>
+
+<!-- ============ THÊM ============ -->
+<section class="tab" id="tab-more">
+  <div class="card">
+    <h2>⚙️ Dữ liệu</h2>
+    <p class="muted">Dữ liệu lưu bằng localStorage ngay trong app trên máy của bạn, không gửi lên máy chủ nào. Hãy xuất bản sao lưu định kỳ.</p>
+    <div class="row">
+      <button onclick="exportData()">⬇️ Xuất sao lưu (JSON)</button>
+      <button class="danger" onclick="resetData()">🗑 Xoá toàn bộ dữ liệu</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📱 Về bản iOS này</h2>
+    <p class="muted">Đây là bản đóng gói trong app iOS (Capacitor) của Sổ Thu Chi — hoạt động ngoại tuyến, không cần tài khoản. Chữ ký miễn phí Personal Team hết hạn sau 7 ngày: mở lại bằng Xcode và bấm Run để cài lại (xem README-HUONG-DAN.md).</p>
+  </div>
+</section>
+</main>
+
+<button class="fab" title="Thêm giao dịch" onclick="openTxDialog()">+</button>
+
+<nav class="tabbar">
+  <button class="active" data-tab="tab-home" onclick="showTab('tab-home',this)"><span class="ic">🏠</span>Tổng quan</button>
+  <button data-tab="tab-tx" onclick="showTab('tab-tx',this)"><span class="ic">📋</span>Giao dịch</button>
+  <button data-tab="tab-budget" onclick="showTab('tab-budget',this)"><span class="ic">🎯</span>Ngân sách</button>
+  <button data-tab="tab-jars" onclick="showTab('tab-jars',this)"><span class="ic">🫙</span>Hũ</button>
+  <button data-tab="tab-assets" onclick="showTab('tab-assets',this)"><span class="ic">💎</span>Tài sản</button>
+  <button data-tab="tab-more" onclick="showTab('tab-more',this)"><span class="ic">⚙️</span>Thêm</button>
+</nav>
+
+<!-- Dialog giao dịch -->
+<dialog id="txDialog">
+  <h2 id="txDialogTitle">Thêm giao dịch</h2>
+  <input type="hidden" id="txId">
+  <label>Loại</label>
+  <select id="txType" onchange="onTxFormChange()"><option value="chi">Chi</option><option value="thu">Thu</option></select>
+  <label>Số tiền (VNĐ)</label><input id="txAmount" type="number" inputmode="numeric" min="0" placeholder="VD: 85000" oninput="updateTxJarUI()">
+  <label>Danh mục</label><select id="txCategory" onchange="onTxCategoryChange()"></select>
+  <label>Ví</label><select id="txWallet"></select>
+  <div id="incomeJarFields" style="display:none">
+    <label style="display:flex;align-items:center;gap:8px;color:var(--ink);font-size:14px"><input type="checkbox" id="txJarAuto" style="width:auto;margin:0" onchange="updateTxJarUI()"> Tự động chia khoản thu này vào 6 hũ</label>
+    <div id="txAllocPreview"></div>
+  </div>
+  <div id="expenseJarFields" style="display:none">
+    <label>Hũ chi (bắt buộc)</label><select id="txJar" onchange="updateTxJarUI()"></select>
+    <div class="muted" id="txJarHint" style="margin:-4px 0 8px"></div>
+  </div>
+  <label>Ngày</label><input id="txDate" type="date">
+  <label>Ghi chú</label><input id="txNote" placeholder="VD: Ăn trưa, đổ xăng…">
+  <div class="row">
+    <button onclick="document.getElementById('txDialog').close()">Huỷ</button>
+    <button class="primary" id="txSaveBtn" onclick="saveTransaction()">Lưu</button>
+  </div>
+</dialog>
+
+<!-- Dialog tài sản -->
+<dialog id="assetDialog">
+  <h2 id="assetDialogTitle">Thêm sản phẩm tiết kiệm</h2>
+  <input type="hidden" id="assetId">
+  <label>Loại sản phẩm</label>
+  <select id="assetKind" onchange="toggleAssetFields()">
+    <option value="gold">Vàng</option>
+    <option value="savings">Sổ tiết kiệm</option>
+    <option value="cd">Chứng chỉ tiền gửi</option>
+  </select>
+  <label>Tên / mô tả</label><input id="assetName" placeholder="VD: Nhẫn 9999, Sổ Vietcombank, CCTG…">
+  <div id="goldFields">
+    <label>Số lượng (chỉ)</label><input id="goldQty" type="number" step="0.01" min="0" placeholder="VD: 5">
+    <label>Giá mua (VNĐ / chỉ)</label><input id="goldBuy" type="number" inputmode="numeric" min="0">
+    <label>Giá hiện tại (VNĐ / chỉ)</label><input id="goldNow" type="number" inputmode="numeric" min="0">
+  </div>
+  <div id="termFields" style="display:none">
+    <label>Số tiền gốc (VNĐ)</label><input id="termPrincipal" type="number" inputmode="numeric" min="0">
+    <label>Lãi suất (% / năm)</label><input id="termRate" type="number" step="0.01" min="0" placeholder="VD: 6.5">
+    <label>Ngày gửi</label><input id="termStart" type="date">
+    <label>Kỳ hạn (tháng)</label><input id="termMonths" type="number" min="1" max="60" placeholder="VD: 12">
+    <label id="termBankLabel">Ngân hàng / nơi phát hành</label><input id="termBank" placeholder="VD: Vietcombank">
+  </div>
+  <div class="row">
+    <button onclick="document.getElementById('assetDialog').close()">Huỷ</button>
+    <button class="primary" onclick="saveAsset()">Lưu</button>
+  </div>
+</dialog>
+<script>
+'use strict';
+var STORAGE_KEY = 'soThuChi.ios.v1';
+var EXPENSE_CATS = ['Ăn uống','Đi lại','Nhà ở','Hoá đơn & dịch vụ','Mua sắm','Sức khoẻ','Giáo dục','Giải trí','Khác'];
+var INCOME_CATS = ['Lương','Thưởng','Kinh doanh','Lãi tiết kiệm','Thu khác'];
+var uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); };
+var fmt = function(n){ return new Intl.NumberFormat('vi-VN').format(Math.round(Number(n)||0)) + '₫'; };
+var todayStr = function(){ var d=new Date(); return d.toISOString().slice(0,10); };
+var monthKey = function(dstr){ return (dstr||todayStr()).slice(0,7); };
+/* ---------- HŨ (6 JARS — T. Harv Eker) ---------- */
+var JAR_DEFS = [
+  {code:'NEC',  name:'Nhu cầu thiết yếu', icon:'🏠', color:'#0ea5e9'},
+  {code:'LTSS', name:'Tiết kiệm dài hạn', icon:'🐷', color:'#f59e0b'},
+  {code:'FFA',  name:'Tự do tài chính',   icon:'📈', color:'#059669'},
+  {code:'EDU',  name:'Giáo dục',          icon:'📚', color:'#8b5cf6'},
+  {code:'PLAY', name:'Hưởng thụ',         icon:'🎉', color:'#ec4899'},
+  {code:'GIVE', name:'Cho đi',            icon:'🎁', color:'#ef4444'}
+];
+var JAR_DEFAULT_PERCENTS = {NEC:55, LTSS:10, FFA:10, EDU:10, PLAY:10, GIVE:5};
+var CAT_JAR_DEFAULTS = {'Ăn uống':'NEC','Đi lại':'NEC','Nhà ở':'NEC','Hoá đơn & dịch vụ':'NEC','Sức khoẻ':'NEC','Giáo dục':'EDU','Giải trí':'PLAY','Mua sắm':'PLAY','Khác':'NEC'};
+function jarDef(code){ for(var i=0;i<JAR_DEFS.length;i++){ if(JAR_DEFS[i].code===code) return JAR_DEFS[i]; } return null; }
+
+
+function defaultState(){
+  return {
+    wallets: [
+      {id:'w-cash', name:'Tiền mặt', type:'Tiền mặt'},
+      {id:'w-bank', name:'Ngân hàng', type:'Ngân hàng'}
+    ],
+    transactions: [],   // thu: co the co jarAlloc {NEC:..,LTSS:..,FFA:..,EDU:..,PLAY:..,GIVE:..} | chi: co jarId (ma hu)
+    budgets: [],   // {month, category, limit}
+    goals: [],     // {id, name, target, saved}
+    assets: [],    // gold: {kind:'gold', qtyChi, buyPrice, nowPrice} | savings/cd: {kind, principal, rate, startDate, termMonths, bank}
+    jarSettings: { autoSplit: true, percents: {NEC:55, LTSS:10, FFA:10, EDU:10, PLAY:10, GIVE:5} },
+    jarTransfers: [],  // {id, from, to, amount, reason, date}
+    catJarMap: {}      // danh muc chi -> ma hu nguoi dung chon gan nhat
+  };
+}
+function normalizeState(s){
+  if(!s.jarSettings) s.jarSettings = { autoSplit: true, percents: {NEC:55, LTSS:10, FFA:10, EDU:10, PLAY:10, GIVE:5} };
+  if(!s.jarSettings.percents) s.jarSettings.percents = {NEC:55, LTSS:10, FFA:10, EDU:10, PLAY:10, GIVE:5};
+  JAR_DEFS.forEach(function(j){ if(typeof s.jarSettings.percents[j.code] !== 'number') s.jarSettings.percents[j.code] = JAR_DEFAULT_PERCENTS[j.code]; });
+  if(typeof s.jarSettings.autoSplit !== 'boolean') s.jarSettings.autoSplit = true;
+  if(!Array.isArray(s.jarTransfers)) s.jarTransfers = [];
+  if(!s.catJarMap) s.catJarMap = {};
+  if(!Array.isArray(s.transactions)) s.transactions = [];
+  return s;
+}
+function loadState(){
+  try{ var raw = localStorage.getItem(STORAGE_KEY); if(raw){ var s = JSON.parse(raw); if(s && s.wallets) return normalizeState(s); } }catch(e){}
+  return defaultState();
+}
+function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ alert('Không lưu được dữ liệu: ' + e.message); } }
+var state = loadState();
+
+function walletBalance(wid){
+  return state.transactions.filter(function(t){return t.walletId===wid;})
+    .reduce(function(s,t){ return s + (t.type==='thu' ? t.amount : -t.amount); }, 0);
+}
+function assetValue(a){
+  if(a.kind==='gold') return (a.qtyChi||0) * (a.nowPrice||0);
+  return a.principal||0;
+}
+function calcMaturityDate(startDate, termMonths){
+  if(!startDate || !termMonths) return '';
+  var d = new Date(startDate + 'T00:00:00'); d.setMonth(d.getMonth() + Number(termMonths));
+  return d.toISOString().slice(0,10);
+}
+/* Lãi ước tính trọn kỳ hạn = gốc × lãi suất%/năm × (số tháng / 12) */
+function calcInterest(principal, ratePct, termMonths){
+  return (principal||0) * (ratePct||0) / 100 * (termMonths||0) / 12;
+}
+/* Lãi đã tích luỹ tới hôm nay, tính theo ngày thực tế / 365 */
+function calcAccruedInterest(a){
+  if(!a.startDate) return 0;
+  var start = new Date(a.startDate + 'T00:00:00'); var now = new Date();
+  var mat = new Date(calcMaturityDate(a.startDate, a.termMonths) + 'T00:00:00');
+  var end = now < mat ? now : mat; if(end < start) return 0;
+  var days = Math.floor((end - start) / 86400000);
+  return (a.principal||0) * (a.rate||0) / 100 * days / 365;
+}
+
+function showTab(id, btn){
+  document.querySelectorAll('section.tab').forEach(function(s){ s.classList.toggle('active', s.id===id); });
+  document.querySelectorAll('nav.tabbar button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+  window.scrollTo(0,0);
+}
+
+/* ================= HŨ — LOGIC =================
+   Số dư mỗi hũ được SUY RA từ dữ liệu gốc: phân bổ của các khoản thu (jarAlloc),
+   các khoản chi gắn hũ (jarId) và các lần chuyển hũ (jarTransfers).
+   Nhờ vậy sửa/xoá giao dịch là các hũ tự hoàn lại đúng số, không lệch. */
+function jarSettings(){ if(!state.jarSettings) state.jarSettings = {autoSplit:true, percents:{NEC:55, LTSS:10, FFA:10, EDU:10, PLAY:10, GIVE:5}}; return state.jarSettings; }
+function jarPercents(){ return jarSettings().percents; }
+/* Chia 1 khoản thu vào 6 hũ theo tỷ lệ %: làm tròn xuống từng hũ,
+   phần lẻ còn lại dồn vào hũ có tỷ lệ lớn nhất để tổng khớp đúng số thu. */
+function splitIncome(amount, percents){
+  amount = Math.round(Number(amount)||0);
+  var parts = {}, assigned = 0, largest = JAR_DEFS[0].code;
+  JAR_DEFS.forEach(function(j){ if((percents[j.code]||0) > (percents[largest]||0)) largest = j.code; });
+  JAR_DEFS.forEach(function(j){ var v = Math.floor(amount * (percents[j.code]||0) / 100); parts[j.code] = v; assigned += v; });
+  parts[largest] += (amount - assigned);
+  return parts;
+}
+function jarBalance(code){
+  var bal = 0;
+  state.transactions.forEach(function(t){
+    if(t.type==='thu' && t.jarAlloc) bal += (t.jarAlloc[code]||0);
+    else if(t.type==='chi' && t.jarId===code) bal -= t.amount;
+  });
+  state.jarTransfers.forEach(function(tr){ if(tr.to===code) bal += tr.amount; if(tr.from===code) bal -= tr.amount; });
+  return bal;
+}
+function jarAllocatedIn(code, mk){
+  var s = 0;
+  state.transactions.forEach(function(t){ if(t.type==='thu' && t.jarAlloc && monthKey(t.date)===mk) s += (t.jarAlloc[code]||0); });
+  return s;
+}
+function jarSpentIn(code, mk){
+  var s = 0;
+  state.transactions.forEach(function(t){ if(t.type==='chi' && t.jarId===code && monthKey(t.date)===mk) s += t.amount; });
+  return s;
+}
+function jarFillPct(code){
+  var bal = jarBalance(code), denom = 0;
+  state.transactions.forEach(function(t){ if(t.type==='thu' && t.jarAlloc) denom += (t.jarAlloc[code]||0); });
+  state.jarTransfers.forEach(function(tr){ if(tr.to===code) denom += tr.amount; });
+  if(denom<=0) return bal>0 ? 100 : 0;
+  return Math.max(0, Math.min(100, Math.round(bal/denom*100)));
+}
+function totalJarBalance(){ return JAR_DEFS.reduce(function(s,j){ return s + jarBalance(j.code); }, 0); }
+function totalWalletMoney(){ return state.wallets.reduce(function(s,w){ return s + walletBalance(w.id); }, 0); }
+function suggestJarForCategory(cat){
+  if(state.catJarMap && state.catJarMap[cat] && jarDef(state.catJarMap[cat])) return state.catJarMap[cat];
+  return CAT_JAR_DEFAULTS[cat] || 'NEC';
+}
+function currentEditTx(){
+  var id = document.getElementById('txId').value; if(!id) return null;
+  return state.transactions.find(function(x){return x.id===id;}) || null;
+}
+/* ----- Form giao dịch: phần hũ ----- */
+function fillJarOptionsForTx(){
+  var sel = document.getElementById('txJar'); if(!sel) return;
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">— Chọn hũ —</option>' + JAR_DEFS.map(function(j){
+    return '<option value="'+j.code+'">'+j.icon+' '+j.name+' · còn '+fmt(jarBalance(j.code))+'</option>';
+  }).join('');
+  if(cur && jarDef(cur)) sel.value = cur;
+}
+function syncTxJarFields(preferJarId){
+  var type = document.getElementById('txType').value;
+  document.getElementById('incomeJarFields').style.display = type==='thu' ? 'block' : 'none';
+  document.getElementById('expenseJarFields').style.display = type==='chi' ? 'block' : 'none';
+  if(type==='chi'){
+    fillJarOptionsForTx();
+    var sel = document.getElementById('txJar');
+    sel.value = (preferJarId && jarDef(preferJarId)) ? preferJarId : suggestJarForCategory(document.getElementById('txCategory').value);
+  }
+  updateTxJarUI();
+}
+function onTxFormChange(){ fillCategoryOptions(); syncTxJarFields(''); }
+function onTxCategoryChange(){
+  if(document.getElementById('txType').value==='chi'){
+    document.getElementById('txJar').value = suggestJarForCategory(document.getElementById('txCategory').value);
+  }
+  updateTxJarUI();
+}
+function updateTxJarUI(){
+  var typeEl = document.getElementById('txType'); if(!typeEl) return;
+  var type = typeEl.value;
+  var btn = document.getElementById('txSaveBtn');
+  var amount = Number(document.getElementById('txAmount').value)||0;
+  if(type==='thu'){
+    btn.disabled = false; btn.style.opacity = '';
+    var box = document.getElementById('txAllocPreview');
+    var auto = document.getElementById('txJarAuto').checked;
+    if(auto && amount>0){
+      var parts = splitIncome(amount, jarPercents());
+      box.innerHTML = '<div class="muted" style="margin-top:6px">Xem trước phân bổ vào 6 hũ:</div>' + JAR_DEFS.map(function(j){
+        return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0"><span>'+j.icon+' '+j.name+' ('+(jarPercents()[j.code]||0)+'%)</span><b>'+fmt(parts[j.code])+'</b></div>';
+      }).join('');
+    } else if(auto){
+      box.innerHTML = '<div class="muted" style="margin-top:6px">Nhập số tiền để xem trước cách chia vào 6 hũ.</div>';
+    } else {
+      box.innerHTML = '<div class="muted" style="margin-top:6px">Đã tắt tự chia: khoản thu này không phân bổ vào hũ và sẽ nằm ở phần “chưa phân bổ”.</div>';
+    }
+    return;
+  }
+  var jarId = document.getElementById('txJar').value;
+  var hint = document.getElementById('txJarHint');
+  if(!jarId){
+    hint.innerHTML = '<span class="red">Bắt buộc chọn hũ để chi.</span>';
+    btn.disabled = true; btn.style.opacity = .5; return;
+  }
+  var avail = jarBalance(jarId);
+  var editing = currentEditTx();
+  if(editing && editing.type==='chi' && editing.jarId===jarId) avail += editing.amount;
+  var isSuggestion = jarId === suggestJarForCategory(document.getElementById('txCategory').value);
+  if(amount>0 && amount>avail){
+    hint.innerHTML = '<span class="red">⚠️ Vượt số dư hũ '+jarDef(jarId).name+' — hũ đang có '+fmt(avail)+'. App KHÔNG tự lấy hũ khác bù: hãy giảm số tiền, chọn hũ khác, hoặc chuyển tiền sang hũ này trước.</span>';
+    btn.disabled = true; btn.style.opacity = .5;
+  } else {
+    hint.innerHTML = 'Hũ '+jarDef(jarId).name+' đang có '+fmt(avail) + (isSuggestion ? ' · Gợi ý theo danh mục' : '') + (amount>0 ? ' · Sau khi chi còn '+fmt(avail-amount) : '');
+    btn.disabled = false; btn.style.opacity = '';
+  }
+}
+/* ----- Render mục Hũ ----- */
+function renderJars(){
+  var grid = document.getElementById('jarGrid'); if(!grid) return;
+  grid.innerHTML = JAR_DEFS.map(function(j){
+    var bal = jarBalance(j.code), fp = jarFillPct(j.code);
+    return '<div class="jar-card"><div style="font-size:20px">'+j.icon+'</div><b style="font-size:13px">'+j.name+'</b>'
+      + '<div class="muted">'+j.code+' · '+(jarPercents()[j.code]||0)+'%</div>'
+      + '<div class="jar-visual"><div class="jar-fill" style="height:'+fp+'%;background:'+j.color+'"></div><div class="jar-pct">'+fp+'%</div></div>'
+      + '<div><b>'+fmt(bal)+'</b></div><div class="muted">còn lại</div></div>';
+  }).join('');
+  var tw = totalWalletMoney(), tj = totalJarBalance(), un = tw - tj;
+  document.getElementById('jarRecon').innerHTML = 'Tổng số dư ví: <b>'+fmt(tw)+'</b> · Tổng số dư 6 hũ: <b>'+fmt(tj)+'</b><br>'
+    + (Math.abs(un)<1 ? '<span class="green">✓ Hai lớp khớp nhau — mọi đồng trong ví đều đã có mục đích trong hũ.</span>'
+       : 'Chưa phân bổ vào hũ: <b>'+fmt(un)+'</b> <span class="muted">(tiền từ khoản thu không bật tự chia hoặc giao dịch cũ — vẫn nằm an toàn trong ví)</span>');
+  renderJarStats(); fillJarSettingsForm(); fillTransferOptions(); renderJarTransfers();
+}
+function renderJarStats(){
+  var mk = monthKey(todayStr());
+  document.getElementById('jarStats').innerHTML = JAR_DEFS.map(function(j){
+    var alloc = jarAllocatedIn(j.code, mk), spent = jarSpentIn(j.code, mk), bal = jarBalance(j.code);
+    var pctSpent = alloc>0 ? Math.round(spent/alloc*100) : 0;
+    return '<div style="padding:7px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><b>'+j.icon+' '+j.name+'</b><span class="muted">còn '+fmt(bal)+'</span></div>'
+      + '<div class="muted">Được chia tháng này: '+fmt(alloc)+' · Đã chi: '+fmt(spent)+(alloc>0 ? ' ('+pctSpent+'% phần được chia)' : '')+'</div>'
+      + '<div class="bar"><i class="'+(spent>alloc ? 'over' : '')+'" style="width:'+Math.min(100,pctSpent)+'%"></i></div></div>';
+  }).join('');
+  var incs = state.transactions.filter(function(t){ return t.type==='thu' && t.jarAlloc; })
+    .sort(function(a,b){ return b.date.localeCompare(a.date); }).slice(0,5);
+  document.getElementById('jarAllocHistory').innerHTML = incs.length ? incs.map(function(t){
+    var parts = JAR_DEFS.map(function(j){ return j.code+' '+fmt(t.jarAlloc[j.code]||0); }).join(' · ');
+    return '<div class="item"><div><b>'+(t.note||t.category)+' — '+fmt(t.amount)+'</b><div class="muted">'+t.date+' · '+parts+'</div></div></div>';
+  }).join('') : '<div class="empty">Chưa có khoản thu nào được chia vào hũ.</div>';
+}
+function fillJarSettingsForm(){
+  var tg = document.getElementById('jarAutoToggle'); if(!tg) return;
+  if(document.activeElement!==tg) tg.checked = jarSettings().autoSplit;
+  JAR_DEFS.forEach(function(j){
+    var el = document.getElementById('pct-'+j.code);
+    if(el && document.activeElement!==el) el.value = jarPercents()[j.code];
+  });
+}
+function saveJarSettings(){
+  var percents = {}, total = 0;
+  JAR_DEFS.forEach(function(j){ var v = Number(document.getElementById('pct-'+j.code).value)||0; percents[j.code]=v; total+=v; });
+  if(total!==100){ alert('Tổng tỷ lệ phải đúng 100%. Hiện tại đang là '+total+'% — vui lòng chỉnh lại.'); return; }
+  state.jarSettings.percents = percents;
+  state.jarSettings.autoSplit = document.getElementById('jarAutoToggle').checked;
+  saveState(); renderAll();
+  alert('Đã lưu cài đặt chia hũ. Tỷ lệ mới chỉ áp dụng cho các khoản thu từ bây giờ.');
+}
+function fillTransferOptions(){
+  var f = document.getElementById('jarFrom'), t = document.getElementById('jarTo'); if(!f || !t) return;
+  var opts = JAR_DEFS.map(function(j){ return '<option value="'+j.code+'">'+j.icon+' '+j.name+' · còn '+fmt(jarBalance(j.code))+'</option>'; }).join('');
+  var fv = f.value, tv = t.value;
+  f.innerHTML = opts; t.innerHTML = opts;
+  f.value = (fv && jarDef(fv)) ? fv : 'PLAY';
+  t.value = (tv && jarDef(tv)) ? tv : 'NEC';
+  if(f.value===t.value) t.value = (f.value==='NEC') ? 'PLAY' : 'NEC';
+}
+function doJarTransfer(){
+  var from = document.getElementById('jarFrom').value;
+  var to = document.getElementById('jarTo').value;
+  var amount = Number(document.getElementById('jarTransferAmount').value)||0;
+  var reason = document.getElementById('jarTransferReason').value.trim();
+  if(from===to){ alert('Hũ nguồn và hũ đích phải khác nhau.'); return; }
+  if(!amount || amount<=0){ alert('Vui lòng nhập số tiền chuyển lớn hơn 0.'); return; }
+  if(amount > jarBalance(from)){ alert('Số tiền vượt số dư hũ '+jarDef(from).name+' (đang có '+fmt(jarBalance(from))+').'); return; }
+  if(!reason){ alert('Bắt buộc ghi lý do chuyển hũ để sau này xem lại.'); return; }
+  state.jarTransfers.push({id: uid(), from: from, to: to, amount: amount, reason: reason, date: todayStr()});
+  document.getElementById('jarTransferAmount').value = '';
+  document.getElementById('jarTransferReason').value = '';
+  saveState(); renderAll();
+  alert('Đã chuyển '+fmt(amount)+' từ hũ '+jarDef(from).name+' sang hũ '+jarDef(to).name+'.');
+}
+function renderJarTransfers(){
+  var list = state.jarTransfers.slice().reverse().slice(0,10);
+  document.getElementById('jarTransferList').innerHTML = list.length ? list.map(function(tr){
+    return '<div class="item"><div><b>'+jarDef(tr.from).name+' → '+jarDef(tr.to).name+'</b><div class="muted">'+tr.date+' · '+tr.reason+'</div></div><div class="amt">'+fmt(tr.amount)+'</div></div>';
+  }).join('') : '<div class="empty">Chưa có lần chuyển hũ nào.</div>';
+}
+
+/* ---------- GIAO DỊCH ---------- */
+function fillCategoryOptions(){
+  var type = document.getElementById('txType').value;
+  var cats = type==='thu' ? INCOME_CATS : EXPENSE_CATS;
+  document.getElementById('txCategory').innerHTML = cats.map(function(c){ return '<option>'+c+'</option>'; }).join('');
+}
+function fillWalletOptions(){
+  var html = state.wallets.map(function(w){ return '<option value="'+w.id+'">'+w.name+'</option>'; }).join('');
+  document.getElementById('txWallet').innerHTML = html;
+  document.getElementById('txFilterWallet').innerHTML = '<option value="">Tất cả ví</option>' + html;
+}
+function openTxDialog(){
+  document.getElementById('txId').value=''; document.getElementById('txDialogTitle').textContent='Thêm giao dịch';
+  document.getElementById('txType').value='chi'; document.getElementById('txAmount').value='';
+  document.getElementById('txNote').value=''; document.getElementById('txDate').value=todayStr();
+  fillCategoryOptions(); fillWalletOptions();
+  document.getElementById('txJarAuto').checked = jarSettings().autoSplit;
+  onTxFormChange();
+  document.getElementById('txDialog').showModal();
+}
+function editTransaction(id){
+  var t = state.transactions.find(function(x){return x.id===id;}); if(!t) return;
+  document.getElementById('txId').value=t.id; document.getElementById('txDialogTitle').textContent='Sửa giao dịch';
+  document.getElementById('txType').value=t.type; fillCategoryOptions(); fillWalletOptions();
+  document.getElementById('txAmount').value=t.amount; document.getElementById('txCategory').value=t.category;
+  document.getElementById('txWallet').value=t.walletId; document.getElementById('txDate').value=t.date;
+  document.getElementById('txNote').value=t.note||'';
+  document.getElementById('txJarAuto').checked = !!t.jarAlloc;
+  syncTxJarFields(t.type==='chi' ? (t.jarId || '') : '');
+  document.getElementById('txDialog').showModal();
+}
+function saveTransaction(){
+  var amount = Number(document.getElementById('txAmount').value);
+  if(!amount || amount<=0){ alert('Vui lòng nhập số tiền lớn hơn 0.'); return; }
+  var data = {
+    type: document.getElementById('txType').value,
+    amount: amount,
+    category: document.getElementById('txCategory').value,
+    walletId: document.getElementById('txWallet').value,
+    date: document.getElementById('txDate').value || todayStr(),
+    note: document.getElementById('txNote').value.trim()
+  };
+  if(data.type==='thu'){
+    if(document.getElementById('txJarAuto').checked){ data.jarAlloc = splitIncome(amount, jarPercents()); }
+  } else {
+    var jarId = document.getElementById('txJar').value;
+    if(!jarId){ alert('Khoản chi bắt buộc phải chọn hũ chi.'); return; }
+    var availJar = jarBalance(jarId);
+    var editingTx = currentEditTx();
+    if(editingTx && editingTx.type==='chi' && editingTx.jarId===jarId) availJar += editingTx.amount;
+    if(amount > availJar){ alert('Khoản chi vượt số dư hũ ' + jarDef(jarId).name + ' (đang có ' + fmt(availJar) + '). App không tự lấy hũ khác bù — hãy giảm số tiền, chọn hũ khác hoặc chuyển tiền sang hũ này trước.'); return; }
+    data.jarId = jarId;
+    if(!state.catJarMap) state.catJarMap = {};
+    state.catJarMap[data.category] = jarId;
+  }
+  var id = document.getElementById('txId').value;
+  if(id){
+    var t = state.transactions.find(function(x){return x.id===id;});
+    Object.assign(t, data);
+    if(data.type==='thu'){ delete t.jarId; if(!data.jarAlloc) delete t.jarAlloc; }
+    else { delete t.jarAlloc; }
+  }
+  else { data.id = uid(); state.transactions.push(data); }
+  saveState(); document.getElementById('txDialog').close(); renderAll();
+}
+function deleteTransaction(id){
+  if(!confirm('Xoá giao dịch này?')) return;
+  state.transactions = state.transactions.filter(function(t){return t.id!==id;});
+  saveState(); renderAll();
+}
+function txItemHtml(t){
+  var w = state.wallets.find(function(x){return x.id===t.walletId;});
+  var sign = t.type==='thu' ? '+' : '−';
+  var cls = t.type==='thu' ? 'green' : 'red';
+  var jarTxt = '';
+  if(t.type==='chi' && t.jarId && jarDef(t.jarId)) jarTxt = ' · 🫙 ' + jarDef(t.jarId).name;
+  if(t.type==='thu' && t.jarAlloc) jarTxt = ' · 🫙 Đã chia vào 6 hũ';
+  return '<div class="item"><div><b>'+ (t.note || t.category) +'</b><div class="muted">'+ t.category +' · '+ (w?w.name:'') + jarTxt +' · '+ t.date +'</div></div>'
+    + '<div style="text-align:right"><div class="amt '+cls+'">'+ sign + fmt(t.amount) +'</div>'
+    + '<button class="small" onclick="editTransaction(\''+t.id+'\')">Sửa</button> <button class="small" onclick="deleteTransaction(\''+t.id+'\')">Xoá</button></div></div>';
+}
+function renderTransactions(){
+  var q = (document.getElementById('txSearch').value||'').toLowerCase();
+  var ft = document.getElementById('txFilterType').value;
+  var fw = document.getElementById('txFilterWallet').value;
+  var list = state.transactions.slice().sort(function(a,b){ return b.date.localeCompare(a.date); })
+    .filter(function(t){ return (!ft || t.type===ft) && (!fw || t.walletId===fw) && (!q || (t.note||'').toLowerCase().includes(q) || t.category.toLowerCase().includes(q)); });
+  document.getElementById('txList').innerHTML = list.length ? list.map(txItemHtml).join('') : '<div class="empty">Chưa có giao dịch nào. Bấm nút + để ghi khoản đầu tiên.</div>';
+}
+
+/* ---------- NGÂN SÁCH ---------- */
+function renderBudgets(){
+  var mk = monthKey(todayStr());
+  document.getElementById('budgetCategory').innerHTML = EXPENSE_CATS.map(function(c){ return '<option>'+c+'</option>'; }).join('');
+  var html = EXPENSE_CATS.map(function(cat){
+    var b = state.budgets.find(function(x){ return x.month===mk && x.category===cat; });
+    var spent = state.transactions.filter(function(t){ return t.type==='chi' && t.category===cat && monthKey(t.date)===mk; }).reduce(function(s,t){return s+t.amount;},0);
+    if(!b && !spent) return '';
+    var limit = b ? b.limit : 0;
+    var pct = limit>0 ? Math.min(100, Math.round(spent/limit*100)) : 0;
+    var cls = limit>0 && spent>limit ? 'over' : (pct>=80 ? 'warn' : '');
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><b>'+cat+'</b><span class="muted">'+ fmt(spent) + (limit? ' / '+fmt(limit) : ' (chưa đặt hạn mức)') +'</span></div>'
+      + (limit? '<div class="bar"><i class="'+cls+'" style="width:'+pct+'%"></i></div><div class="muted">'+pct+'%'+(spent>limit?' — ĐÃ VƯỢT NGÂN SÁCH':'')+'</div>' : '') + '</div>';
+  }).join('');
+  document.getElementById('budgetList').innerHTML = html || '<div class="empty">Chưa có ngân sách / chi tiêu nào trong tháng này.</div>';
+}
+function saveBudget(){
+  var cat = document.getElementById('budgetCategory').value;
+  var limit = Number(document.getElementById('budgetLimit').value);
+  if(!limit || limit<=0){ alert('Vui lòng nhập hạn mức lớn hơn 0.'); return; }
+  var mk = monthKey(todayStr());
+  var b = state.budgets.find(function(x){ return x.month===mk && x.category===cat; });
+  if(b) b.limit = limit; else state.budgets.push({month:mk, category:cat, limit:limit});
+  saveState(); renderBudgets(); alert('Đã lưu ngân sách ' + cat + ': ' + fmt(limit) + '/tháng');
+}
+
+/* ---------- TÀI SẢN ---------- */
+function toggleAssetFields(){
+  var kind = document.getElementById('assetKind').value;
+  document.getElementById('goldFields').style.display = kind==='gold' ? 'block' : 'none';
+  document.getElementById('termFields').style.display = kind==='gold' ? 'none' : 'block';
+}
+function openAssetDialog(){
+  document.getElementById('assetId').value=''; document.getElementById('assetDialogTitle').textContent='Thêm sản phẩm tiết kiệm';
+  document.getElementById('assetKind').value='gold'; document.getElementById('assetName').value='';
+  ['goldQty','goldBuy','goldNow','termPrincipal','termRate','termMonths','termBank'].forEach(function(i){ document.getElementById(i).value=''; });
+  document.getElementById('termStart').value = todayStr();
+  toggleAssetFields(); document.getElementById('assetDialog').showModal();
+}
+function editAsset(id){
+  var a = state.assets.find(function(x){return x.id===id;}); if(!a) return;
+  document.getElementById('assetId').value=a.id; document.getElementById('assetDialogTitle').textContent='Sửa sản phẩm';
+  document.getElementById('assetKind').value=a.kind; document.getElementById('assetName').value=a.name||'';
+  toggleAssetFields();
+  if(a.kind==='gold'){ document.getElementById('goldQty').value=a.qtyChi; document.getElementById('goldBuy').value=a.buyPrice; document.getElementById('goldNow').value=a.nowPrice; }
+  else { document.getElementById('termPrincipal').value=a.principal; document.getElementById('termRate').value=a.rate; document.getElementById('termStart').value=a.startDate; document.getElementById('termMonths').value=a.termMonths; document.getElementById('termBank').value=a.bank||''; }
+  document.getElementById('assetDialog').showModal();
+}
+function saveAsset(){
+  var kind = document.getElementById('assetKind').value;
+  var data = { kind: kind, name: document.getElementById('assetName').value.trim() || (kind==='gold' ? 'Vàng' : kind==='savings' ? 'Sổ tiết kiệm' : 'Chứng chỉ tiền gửi') };
+  if(kind==='gold'){
+    data.qtyChi = Number(document.getElementById('goldQty').value)||0;
+    data.buyPrice = Number(document.getElementById('goldBuy').value)||0;
+    data.nowPrice = Number(document.getElementById('goldNow').value)||0;
+    if(data.qtyChi<=0){ alert('Vui lòng nhập số lượng vàng (chỉ) lớn hơn 0.'); return; }
+  } else {
+    data.principal = Number(document.getElementById('termPrincipal').value)||0;
+    data.rate = Number(document.getElementById('termRate').value)||0;
+    data.startDate = document.getElementById('termStart').value || todayStr();
+    data.termMonths = Number(document.getElementById('termMonths').value)||0;
+    data.bank = document.getElementById('termBank').value.trim();
+    if(data.principal<=0 || data.termMonths<=0){ alert('Vui lòng nhập số tiền gốc và kỳ hạn hợp lệ.'); return; }
+  }
+  var id = document.getElementById('assetId').value;
+  if(id){ var a = state.assets.find(function(x){return x.id===id;}); var keepKind = a.kind; Object.assign(a, data); a.kind = keepKind; }
+  else { data.id = uid(); state.assets.push(data); }
+  saveState(); document.getElementById('assetDialog').close(); renderAll();
+}
+function deleteAsset(id){
+  if(!confirm('Xoá sản phẩm này?')) return;
+  state.assets = state.assets.filter(function(a){return a.id!==id;});
+  saveState(); renderAll();
+}
+function assetItemHtml(a){
+  var head, detail;
+  if(a.kind==='gold'){
+    var cost = (a.qtyChi||0)*(a.buyPrice||0), val = assetValue(a), pnl = val - cost;
+    head = '🪙 ' + a.name;
+    detail = (a.qtyChi||0) + ' chỉ · Mua ' + fmt(a.buyPrice) + '/chỉ · Nay ' + fmt(a.nowPrice) + '/chỉ<br>Giá trị: <b>' + fmt(val) + '</b> · Lãi/lỗ: <b class="' + (pnl>=0?'green':'red') + '">' + (pnl>=0?'+':'−') + fmt(Math.abs(pnl)) + '</b>';
+  } else {
+    var mat = calcMaturityDate(a.startDate, a.termMonths);
+    var est = calcInterest(a.principal, a.rate, a.termMonths);
+    var accrued = calcAccruedInterest(a);
+    head = (a.kind==='savings' ? '🏦 ' : '📜 ') + a.name;
+    detail = 'Gốc: <b>' + fmt(a.principal) + '</b> · ' + (a.rate||0) + '%/năm · ' + (a.termMonths||0) + ' tháng' + (a.bank ? ' · ' + a.bank : '')
+      + '<br>Gửi: ' + a.startDate + ' · Đáo hạn: ' + mat + '<br>Lãi ước tính khi đáo hạn: <b class="green">' + fmt(est) + '</b> · Đã tích luỹ tới nay: ' + fmt(accrued);
+  }
+  return '<div class="item"><div><b>' + head + '</b><div class="muted">' + detail + '</div></div>'
+    + '<div><button class="small" onclick="editAsset(\''+a.id+'\')">Sửa</button> <button class="small" onclick="deleteAsset(\''+a.id+'\')">Xoá</button></div></div>';
+}
+function renderAssets(){
+  document.getElementById('assetList').innerHTML = state.assets.length ? state.assets.map(assetItemHtml).join('') : '<div class="empty">Chưa có sản phẩm tiết kiệm nào. Bấm “+ Thêm sản phẩm” để thêm vàng, sổ tiết kiệm hoặc chứng chỉ tiền gửi.</div>';
+}
+
+/* ---------- MỤC TIÊU ---------- */
+function renderGoals(){
+  document.getElementById('goalList').innerHTML = state.goals.length ? state.goals.map(function(g){
+    var pct = g.target>0 ? Math.min(100, Math.round((g.saved||0)/g.target*100)) : 0;
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><b>'+g.name+'</b><span class="muted">'+fmt(g.saved||0)+' / '+fmt(g.target)+'</span></div><div class="bar"><i style="width:'+pct+'%"></i></div><div class="muted">'+pct+'% · <a href="#" onclick="addToGoal(\''+g.id+'\');return false;">Nạp thêm</a> · <a href="#" onclick="deleteGoal(\''+g.id+'\');return false;">Xoá</a></div></div>';
+  }).join('') : '<div class="empty">Chưa có mục tiêu tiết kiệm nào.</div>';
+}
+function addGoal(){
+  var name = document.getElementById('goalName').value.trim();
+  var target = Number(document.getElementById('goalTarget').value);
+  if(!name || !target || target<=0){ alert('Vui lòng nhập tên và số tiền mục tiêu hợp lệ.'); return; }
+  state.goals.push({id:uid(), name:name, target:target, saved:0});
+  document.getElementById('goalName').value=''; document.getElementById('goalTarget').value='';
+  saveState(); renderGoals();
+}
+function addToGoal(id){
+  var v = prompt('Nạp thêm bao nhiêu VNĐ?'); if(!v) return;
+  var g = state.goals.find(function(x){return x.id===id;}); g.saved = (g.saved||0) + (Number(v)||0);
+  saveState(); renderGoals();
+}
+function deleteGoal(id){
+  if(!confirm('Xoá mục tiêu này?')) return;
+  state.goals = state.goals.filter(function(g){return g.id!==id;});
+  saveState(); renderGoals();
+}
+
+/* ---------- TỔNG QUAN / BÁO CÁO ---------- */
+function renderDashboard(){
+  var mk = monthKey(todayStr());
+  var total = state.wallets.reduce(function(s,w){ return s + walletBalance(w.id); }, 0);
+  var inc = 0, exp = 0;
+  state.transactions.forEach(function(t){ if(monthKey(t.date)===mk){ if(t.type==='thu') inc += t.amount; else exp += t.amount; } });
+  var gold = 0, sav = 0, cd = 0;
+  state.assets.forEach(function(a){ var v = assetValue(a); if(a.kind==='gold') gold += v; else if(a.kind==='savings') sav += v; else cd += v; });
+  document.getElementById('totalBalance').textContent = fmt(total);
+  document.getElementById('monthIncome').textContent = fmt(inc);
+  document.getElementById('monthExpense').textContent = fmt(exp);
+  document.getElementById('assetGold').textContent = fmt(gold);
+  document.getElementById('assetSavings').textContent = fmt(sav);
+  document.getElementById('assetCd').textContent = fmt(cd);
+  document.getElementById('netWorth').textContent = fmt(total + gold + sav + cd);
+  document.getElementById('assetNote').textContent = state.assets.length ? ('Tổng tài sản tiết kiệm: ' + fmt(gold+sav+cd)) : 'Chưa có vàng / sổ tiết kiệm / chứng chỉ tiền gửi. Thêm ở tab Tài sản.';
+  document.getElementById('walletList').innerHTML = state.wallets.map(function(w){
+    return '<div class="item"><div><b>'+w.name+'</b><div class="muted">'+w.type+'</div></div><div class="amt">'+fmt(walletBalance(w.id))+'</div></div>';
+  }).join('');
+  var jarTotalHome = totalJarBalance(); var unallocHome = total - jarTotalHome;
+  document.getElementById('homeJarSummary').innerHTML = 'Tổng tiền trong 6 hũ: <b>' + fmt(jarTotalHome) + '</b><br><span class="muted">' + (Math.abs(unallocHome)<1 ? '✓ Khớp hoàn toàn với tổng số dư ví.' : 'Chưa phân bổ vào hũ: ' + fmt(unallocHome) + ' (tiền vẫn nằm trong ví)') + '</span>';
+  var recent = state.transactions.slice().sort(function(a,b){ return b.date.localeCompare(a.date); }).slice(0,5);
+  document.getElementById('recentList').innerHTML = recent.length ? recent.map(txItemHtml).join('') : '<div class="empty">Chưa có giao dịch nào.</div>';
+  var byCat = {};
+  state.transactions.filter(function(t){ return t.type==='chi' && monthKey(t.date)===mk; }).forEach(function(t){ byCat[t.category] = (byCat[t.category]||0) + t.amount; });
+  var entries = Object.keys(byCat).sort(function(a,b){ return byCat[b]-byCat[a]; });
+  var max = entries.length ? byCat[entries[0]] : 0;
+  document.getElementById('reportByCategory').innerHTML = entries.length ? entries.map(function(cat){
+    var pct = max>0 ? Math.round(byCat[cat]/max*100) : 0;
+    return '<div style="padding:6px 0"><div style="display:flex;justify-content:space-between"><span>'+cat+'</span><b>'+fmt(byCat[cat])+'</b></div><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+  }).join('') : '<div class="empty">Chưa có khoản chi nào trong tháng này.</div>';
+}
+
+/* ---------- DỮ LIỆU ---------- */
+function exportData(){
+  var blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'so-thu-chi-sao-luu-' + todayStr() + '.json'; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+function resetData(){
+  if(!confirm('Xoá TOÀN BỘ dữ liệu trên máy này? Hành động này không hoàn tác.')) return;
+  localStorage.removeItem(STORAGE_KEY); state = defaultState(); saveState(); renderAll();
+}
+
+function renderAll(){
+  fillWalletOptions(); fillCategoryOptions();
+  document.getElementById('budgetCategory').innerHTML = EXPENSE_CATS.map(function(c){ return '<option>'+c+'</option>'; }).join('');
+  renderDashboard(); renderTransactions(); renderBudgets(); renderAssets(); renderGoals(); renderJars();
+}
+renderAll();
+</script>
+</body>
+</html>
