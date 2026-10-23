@@ -1,0 +1,98 @@
+# Build Sổ Thu Chi cho Android trên máy Ubuntu đám mây của GitHub Actions
+# Kết quả: file app-debug.apk (bản DEBUG, đã tự ký bằng debug key của Android)
+# tải về ở mục Artifacts - cài trực tiếp lên điện thoại Android được.
+# Bản debug KHÔNG đưa lên CH Play được: muốn phát hành chính thức cần ký
+# release bằng keystore riêng + tài khoản Google Play Developer.
+# Xem thêm HUONG-DAN-APK.md.
+
+name: Build APK Android (Sổ Thu Chi)
+
+"on":
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build APK debug trên Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Cài Java JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Hiển thị phiên bản công cụ
+        run: |
+          node --version
+          npm --version
+          java -version
+          echo "ANDROID_HOME=$ANDROID_HOME"
+
+      - name: Cài dependencies
+        run: npm ci
+
+      - name: Cài @capacitor/android (cùng phiên bản với @capacitor/core) nếu chưa có
+        run: |
+          if node -e "const p=require('./package.json'); const d=Object.assign({}, p.dependencies, p.devDependencies); process.exit(d['@capacitor/android'] ? 0 : 1)"; then
+            echo "Đã có @capacitor/android trong package.json, bỏ qua bước cài."
+          else
+            CORE_VER=$(node -p "require('./package.json').dependencies['@capacitor/core'].replace(/^[\^~]/, '')")
+            echo "Chưa có @capacitor/android - đang cài bản $CORE_VER cho khớp @capacitor/core..."
+            npm install "@capacitor/android@$CORE_VER"
+          fi
+
+      - name: Tạo thư mục android nếu chưa có
+        run: |
+          if [ ! -d "android" ]; then
+            echo "Chưa có thư mục android/ - đang tạo bằng Capacitor..."
+            npx cap add android
+          else
+            echo "Đã có thư mục android/, bỏ qua bước cap add android."
+          fi
+
+      - name: Đồng bộ web app vào project Android
+        run: npx cap sync android
+
+      - name: Build APK debug bằng Gradle
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Thông tin file APK vừa build
+        run: |
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          echo "=================================================="
+          echo "Đường dẫn APK: $APK_PATH"
+          ls -lh "$APK_PATH"
+          echo "APK này là bản DEBUG, đã tự ký bằng debug key của Android:"
+          echo "- Cài trực tiếp lên điện thoại Android được (sideload)."
+          echo "- KHÔNG đưa lên CH Play được (bản chính thức phải ký release)."
+          echo "=================================================="
+
+      - name: Tải APK lên mục Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoThuChi-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+          if-no-files-found: error
