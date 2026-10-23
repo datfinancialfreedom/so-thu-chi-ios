@@ -46,10 +46,45 @@ dialog{border:0;border-radius:18px;width:min(94vw,480px);max-height:88vh;overflo
 .jar-fill{position:absolute;left:0;right:0;bottom:0;transition:height .45s ease}
 .jar-pct{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#111827;text-shadow:0 1px 0 rgba(255,255,255,.75)}
 .pct-row{display:flex;gap:8px;align-items:center;margin:4px 0}.pct-row label{flex:1}.pct-row input{width:92px;flex:0 0 92px;margin:0}
+#authGate{position:fixed;inset:0;z-index:300;background:linear-gradient(160deg,var(--teal),var(--teal2));display:none;overflow-y:auto;padding:calc(28px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+#authGate.open{display:block}
+.auth-card{background:#fff;border-radius:20px;max-width:420px;margin:0 auto;padding:22px 18px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+.auth-card h1{margin:0 0 2px;font-size:22px;color:var(--teal)}
+.auth-tabs{display:flex;gap:8px;margin:14px 0 6px}
+.auth-tabs button{flex:1;background:#eef2f2;font-weight:600}
+.auth-tabs button.active{background:var(--teal);color:#fff}
+.auth-err{background:#fef2f2;color:var(--red);border:1px solid #fecaca;border-radius:12px;padding:9px 11px;font-size:13px;margin:8px 0;display:none}
+.auth-note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5}
 @media(min-width:721px){nav.tabbar{max-width:720px;left:50%;transform:translateX(-50%);border-radius:16px 16px 0 0}}
 </style>
 </head>
 <body>
+<!-- ============ CỔNG ĐĂNG NHẬP ============ -->
+<div id="authGate">
+  <div class="auth-card">
+    <h1>📒 Sổ Thu Chi</h1>
+    <p class="muted" style="margin:0">Đăng nhập để vào sổ của bạn. Tài khoản và dữ liệu được lưu ngay trên máy này.</p>
+    <div class="auth-tabs">
+      <button id="authTabLogin" class="active" onclick="switchAuthMode('login')">Đăng nhập</button>
+      <button id="authTabRegister" onclick="switchAuthMode('register')">Đăng ký mới</button>
+    </div>
+    <div class="auth-err" id="authError"></div>
+    <div id="authLoginForm">
+      <label>Email</label><input id="loginEmail" type="email" autocomplete="email" placeholder="VD: ban@example.com">
+      <label>Mật khẩu</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Mật khẩu của bạn" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="primary" style="width:100%" id="loginBtn" onclick="doLogin()">Đăng nhập</button>
+      <p class="auth-note">Chưa có tài khoản? Bấm <b>Đăng ký mới</b> ở trên. Phiên đăng nhập được ghi nhớ trên máy này tối đa 90 ngày.</p>
+    </div>
+    <div id="authRegisterForm" style="display:none">
+      <label>Tên hiển thị (tuỳ chọn)</label><input id="regName" type="text" autocomplete="name" placeholder="VD: Lê">
+      <label>Email</label><input id="regEmail" type="email" autocomplete="email" placeholder="VD: ban@example.com">
+      <label>Mật khẩu (tối thiểu 6 ký tự)</label><input id="regPassword" type="password" autocomplete="new-password" placeholder="Tạo mật khẩu">
+      <label>Nhập lại mật khẩu</label><input id="regPassword2" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" onkeydown="if(event.key==='Enter')doRegister()">
+      <button class="primary" style="width:100%" id="registerBtn" onclick="doRegister()">Tạo tài khoản</button>
+      <p class="auth-note">⚠️ Tài khoản và dữ liệu chỉ lưu trên máy này. <b>Quên mật khẩu thì không khôi phục được</b> — hãy xuất Sao lưu JSON định kỳ ở mục Thêm sau khi đăng nhập.</p>
+    </div>
+  </div>
+</div>
 <header>
   <h1>📒 Sổ Thu Chi</h1>
   <p>Quản lý tài chính cá nhân · Tiền Việt (VNĐ) · Dữ liệu lưu ngay trên máy của bạn</p>
@@ -197,8 +232,23 @@ dialog{border:0;border-radius:18px;width:min(94vw,480px);max-height:88vh;overflo
 <!-- ============ THÊM ============ -->
 <section class="tab" id="tab-more">
   <div class="card">
+    <h2>👤 Tài khoản</h2>
+    <div class="item"><div><b id="acctName">—</b><div class="muted" id="acctEmail">—</div></div><span class="chip">Trên máy này</span></div>
+    <h3>Đổi tên hiển thị</h3>
+    <label>Tên hiển thị mới</label><input id="acctNewName" placeholder="VD: Lê">
+    <button onclick="changeDisplayName()">Lưu tên mới</button>
+    <h3>Đổi mật khẩu</h3>
+    <label>Mật khẩu hiện tại</label><input id="acctOldPass" type="password" autocomplete="current-password" placeholder="Mật khẩu đang dùng">
+    <label>Mật khẩu mới (tối thiểu 6 ký tự)</label><input id="acctNewPass" type="password" autocomplete="new-password" placeholder="Mật khẩu mới">
+    <label>Nhập lại mật khẩu mới</label><input id="acctNewPass2" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới">
+    <button onclick="changePassword()">Đổi mật khẩu</button>
+    <h3>Phiên đăng nhập</h3>
+    <button class="danger" onclick="doLogout()">🚪 Đăng xuất</button>
+    <p class="muted" style="margin-top:10px">⚠️ Lưu ý: tài khoản và toàn bộ dữ liệu tài chính chỉ lưu ngay trên máy này, không có máy chủ. <b>Quên mật khẩu thì không khôi phục được</b> — hãy dùng mục Sao lưu JSON bên dưới để tự bảo vệ dữ liệu của bạn. Mỗi tài khoản trên máy có dữ liệu riêng, không nhìn thấy dữ liệu của tài khoản khác.</p>
+  </div>
+  <div class="card">
     <h2>⚙️ Dữ liệu</h2>
-    <p class="muted">Dữ liệu lưu bằng localStorage ngay trong app trên máy của bạn, không gửi lên máy chủ nào. Hãy xuất bản sao lưu định kỳ.</p>
+    <p class="muted">Dữ liệu của tài khoản đang đăng nhập lưu bằng localStorage ngay trong app trên máy của bạn, không gửi lên máy chủ nào. Sao lưu xuất ra là dữ liệu của đúng tài khoản đang đăng nhập. Hãy xuất bản sao lưu định kỳ.</p>
     <div class="row">
       <button onclick="exportData()">⬇️ Xuất sao lưu (JSON)</button>
       <button class="danger" onclick="resetData()">🗑 Xoá toàn bộ dữ liệu</button>
@@ -206,7 +256,7 @@ dialog{border:0;border-radius:18px;width:min(94vw,480px);max-height:88vh;overflo
   </div>
   <div class="card">
     <h2>📱 Về bản iOS này</h2>
-    <p class="muted">Đây là bản đóng gói trong app iOS (Capacitor) của Sổ Thu Chi — hoạt động ngoại tuyến, không cần tài khoản. Chữ ký miễn phí Personal Team hết hạn sau 7 ngày: mở lại bằng Xcode và bấm Run để cài lại (xem README-HUONG-DAN.md).</p>
+    <p class="muted">Đây là bản đóng gói trong app iOS (Capacitor) của Sổ Thu Chi — hoạt động ngoại tuyến; tài khoản và dữ liệu lưu ngay trên máy, mỗi tài khoản một sổ riêng. Chữ ký miễn phí Personal Team hết hạn sau 7 ngày: mở lại bằng Xcode và bấm Run để cài lại (xem README-HUONG-DAN.md).</p>
   </div>
 </section>
 </main>
@@ -277,7 +327,14 @@ dialog{border:0;border-radius:18px;width:min(94vw,480px);max-height:88vh;overflo
 </dialog>
 <script>
 'use strict';
-var STORAGE_KEY = 'soThuChi.ios.v1';
+var STORAGE_KEY = 'soThuChi.ios.v1';   // khoa du lieu AN DANH cu (truoc khi co dang nhap) — chi dung de nhan ban giao cho tai khoan dau tien
+var ACCOUNTS_KEY = 'stc_accounts_v1';  // danh ba tai khoan tren may: [{email, displayName, salt, hash, iterations, algo, createdAt}]
+var SESSION_KEY = 'stc_session_v1';    // phien dang nhap da ghi nho: {email, loginAt}
+var SESSION_MAX_AGE = 90 * 24 * 60 * 60 * 1000; // ghi nho dang nhap toi da 90 ngay tren may nay
+var PBKDF2_ITERATIONS = 150000;        // PBKDF2-SHA256, >= 100.000 vong
+var FALLBACK_ITERATIONS = 50000;       // fallback SHA-256 lap (khi khong co crypto.subtle)
+var DATA_KEY = null;                   // khoa localStorage chua du lieu tai chinh cua tai khoan dang dang nhap
+var currentUser = null;                // email cua tai khoan dang dang nhap (null = chua dang nhap)
 var EXPENSE_CATS = ['Ăn uống','Đi lại','Nhà ở','Hoá đơn & dịch vụ','Mua sắm','Sức khoẻ','Giáo dục','Giải trí','Khác'];
 var INCOME_CATS = ['Lương','Thưởng','Kinh doanh','Lãi tiết kiệm','Thu khác'];
 var uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); };
@@ -324,11 +381,12 @@ function normalizeState(s){
   return s;
 }
 function loadState(){
-  try{ var raw = localStorage.getItem(STORAGE_KEY); if(raw){ var s = JSON.parse(raw); if(s && s.wallets) return normalizeState(s); } }catch(e){}
+  if(!DATA_KEY) return defaultState();
+  try{ var raw = localStorage.getItem(DATA_KEY); if(raw){ var s = JSON.parse(raw); if(s && s.wallets) return normalizeState(s); } }catch(e){}
   return defaultState();
 }
-function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ alert('Không lưu được dữ liệu: ' + e.message); } }
-var state = loadState();
+function saveState(){ if(!DATA_KEY) return; try{ localStorage.setItem(DATA_KEY, JSON.stringify(state)); }catch(e){ alert('Không lưu được dữ liệu: ' + e.message); } }
+var state = defaultState(); // trang thai that chi nap trong enterApp() sau khi dang nhap hop le
 
 function walletBalance(wid){
   return state.transactions.filter(function(t){return t.walletId===wid;})
@@ -805,6 +863,249 @@ function renderDashboard(){
   }).join('') : '<div class="empty">Chưa có khoản chi nào trong tháng này.</div>';
 }
 
+/* ================= TÀI KHOẢN (LƯU TRÊN MÁY) =================
+   Danh bạ tài khoản: localStorage[ACCOUNTS_KEY] = [{email, displayName, salt, hash, iterations, algo, createdAt}]
+   Mật khẩu KHÔNG lưu dạng thô: băm PBKDF2-SHA256 (crypto.subtle, 150.000 vòng, salt ngẫu nhiên 16 byte).
+   Nếu crypto.subtle không khả dụng (môi trường không bảo mật), fallback: SHA-256 thuần JS lặp 50.000 vòng có salt (algo='SHA256-ITER-FALLBACK').
+   Dữ liệu tài chính mỗi tài khoản nằm ở khóa riêng: 'soThuChi.data.v1.' + base64url(email) — cách ly hoàn toàn. */
+function sha256HexSync(input){
+  var ascii = unescape(encodeURIComponent(String(input)));
+  function rr(v,a){ return (v>>>a)|(v<<(32-a)); }
+  var maxWord = Math.pow(2,32), i, j, result = '';
+  var words = [], asciiBitLength = ascii.length*8;
+  var hash = sha256HexSync.h = sha256HexSync.h || [], k = sha256HexSync.k = sha256HexSync.k || [];
+  var primeCounter = k.length, isComposite = {};
+  for(var candidate = 2; primeCounter < 64; candidate++){
+    if(!isComposite[candidate]){
+      for(i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+      hash[primeCounter] = (Math.pow(candidate,.5)*maxWord)|0;
+      k[primeCounter++] = (Math.pow(candidate,1/3)*maxWord)|0;
+    }
+  }
+  ascii += '\x80';
+  while(ascii.length%64 - 56) ascii += '\x00';
+  for(i = 0; i < ascii.length; i++){ words[i>>2] |= ascii.charCodeAt(i) << ((3-i)%4)*8; }
+  words[words.length] = ((asciiBitLength/maxWord)|0);
+  words[words.length] = asciiBitLength;
+  for(j = 0; j < words.length;){
+    var w = words.slice(j, j += 16), oldHash = hash;
+    hash = hash.slice(0,8);
+    for(i = 0; i < 64; i++){
+      var w15 = w[i-15], w2 = w[i-2], a = hash[0], e = hash[4];
+      var temp1 = hash[7]
+        + (rr(e,6) ^ rr(e,11) ^ rr(e,25))
+        + ((e & hash[5]) ^ ((~e) & hash[6]))
+        + k[i]
+        + (w[i] = (i < 16) ? w[i] : (w[i-16] + (rr(w15,7) ^ rr(w15,18) ^ (w15>>>3)) + w[i-7] + (rr(w2,17) ^ rr(w2,19) ^ (w2>>>10)))|0);
+      var temp2 = (rr(a,2) ^ rr(a,13) ^ rr(a,22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+      hash = [(temp1 + temp2)|0].concat(hash);
+      hash[4] = (hash[4] + temp1)|0;
+    }
+    for(i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i])|0;
+  }
+  for(i = 0; i < 8; i++){
+    for(j = 3; j + 1; j--){
+      var b = (hash[i]>>(j*8)) & 255;
+      result += ((b < 16) ? '0' : '') + b.toString(16);
+    }
+  }
+  return result;
+}
+function utf8Bytes(str){ var u = unescape(encodeURIComponent(String(str))); var b = new Uint8Array(u.length); for(var i=0;i<u.length;i++) b[i] = u.charCodeAt(i); return b; }
+function bytesToB64(bytes){ var s = ''; for(var i=0;i<bytes.length;i++) s += String.fromCharCode(bytes[i]); return btoa(s); }
+function b64ToBytes(b64){ var s = atob(b64); var bytes = new Uint8Array(s.length); for(var i=0;i<s.length;i++) bytes[i] = s.charCodeAt(i); return bytes; }
+function randomSaltB64(){
+  var bytes = new Uint8Array(16);
+  if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(bytes);
+  else for(var i=0;i<16;i++) bytes[i] = Math.floor(Math.random()*256);
+  return bytesToB64(bytes);
+}
+function safeEqual(a, b){
+  a = String(a); b = String(b);
+  if(a.length !== b.length) return false;
+  var d = 0; for(var i=0;i<a.length;i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+function pbkdf2Hash(password, saltB64, iterations){
+  var salt = b64ToBytes(saltB64);
+  return crypto.subtle.importKey('raw', utf8Bytes(password), {name:'PBKDF2'}, false, ['deriveBits'])
+    .then(function(km){ return crypto.subtle.deriveBits({name:'PBKDF2', salt:salt, iterations:iterations, hash:'SHA-256'}, km, 256); })
+    .then(function(bits){ return bytesToB64(new Uint8Array(bits)); });
+}
+function fallbackHash(password, saltB64, iterations){
+  var h = saltB64 + ':' + password;
+  for(var i=0;i<iterations;i++) h = sha256HexSync(h + ':' + saltB64);
+  return h;
+}
+function hashPasswordNew(password){
+  var salt = randomSaltB64();
+  if(window.crypto && crypto.subtle && crypto.subtle.importKey){
+    return pbkdf2Hash(password, salt, PBKDF2_ITERATIONS)
+      .then(function(h){ return {salt:salt, hash:h, iterations:PBKDF2_ITERATIONS, algo:'PBKDF2-SHA256'}; })
+      .catch(function(){ return {salt:salt, hash:fallbackHash(password, salt, FALLBACK_ITERATIONS), iterations:FALLBACK_ITERATIONS, algo:'SHA256-ITER-FALLBACK'}; });
+  }
+  return Promise.resolve({salt:salt, hash:fallbackHash(password, salt, FALLBACK_ITERATIONS), iterations:FALLBACK_ITERATIONS, algo:'SHA256-ITER-FALLBACK'});
+}
+function verifyPassword(account, password){
+  if(!account) return Promise.resolve(false);
+  if(account.algo === 'SHA256-ITER-FALLBACK'){
+    return Promise.resolve(safeEqual(fallbackHash(password, account.salt, account.iterations), account.hash));
+  }
+  if(window.crypto && crypto.subtle && crypto.subtle.importKey){
+    return pbkdf2Hash(password, account.salt, account.iterations)
+      .then(function(h){ return safeEqual(h, account.hash); })
+      .catch(function(){ return false; });
+  }
+  return Promise.resolve(false);
+}
+function normalizeEmail(v){ return String(v||'').trim().toLowerCase(); }
+function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function loadAccounts(){ try{ var a = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]'); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+function saveAccounts(a){ try{ localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(a)); }catch(e){ alert('Không lưu được danh bạ tài khoản: ' + e.message); } }
+function findAccount(email){ var a = loadAccounts(); for(var i=0;i<a.length;i++){ if(a[i].email === email) return a[i]; } return null; }
+function accountDataKey(email){
+  var b64 = bytesToB64(utf8Bytes(email));
+  return 'soThuChi.data.v1.' + b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+/* Nhan ban giao du lieu an danh cu (khoa STORAGE_KEY) cho tai khoan dang vao app,
+   CHI khi tai khoan do chua co khoa du lieu rieng va du lieu cu con hop le.
+   Sau khi nhan, khoa cu bi xoa nen cac tai khoan tao sau bat dau sach. */
+function claimLegacyData(){
+  if(!DATA_KEY) return false;
+  try{
+    if(localStorage.getItem(DATA_KEY)) return false;
+    var legacy = localStorage.getItem(STORAGE_KEY);
+    if(!legacy) return false;
+    var parsed = JSON.parse(legacy);
+    if(!parsed || !parsed.wallets) return false;
+    localStorage.setItem(DATA_KEY, legacy);
+    localStorage.removeItem(STORAGE_KEY);
+    return true;
+  }catch(e){ return false; }
+}
+function setSession(email){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({email:email, loginAt:Date.now()})); }catch(e){} }
+function getSessionEmail(){
+  try{
+    var s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if(s && s.email && s.loginAt && (Date.now() - s.loginAt) < SESSION_MAX_AGE && findAccount(s.email)) return s.email;
+  }catch(e){}
+  return null;
+}
+function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
+/* ---------- Cổng đăng nhập ---------- */
+function authError(msg){
+  var el = document.getElementById('authError');
+  if(!msg){ el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = msg; el.style.display = 'block';
+}
+function switchAuthMode(mode){
+  authError('');
+  document.getElementById('authTabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('authTabRegister').classList.toggle('active', mode === 'register');
+  document.getElementById('authLoginForm').style.display = (mode === 'login') ? '' : 'none';
+  document.getElementById('authRegisterForm').style.display = (mode === 'register') ? '' : 'none';
+}
+function showGate(){ document.getElementById('authGate').classList.add('open'); }
+function hideGate(){ document.getElementById('authGate').classList.remove('open'); }
+function doRegister(){
+  authError('');
+  var name = document.getElementById('regName').value.trim();
+  var email = normalizeEmail(document.getElementById('regEmail').value);
+  var pw = document.getElementById('regPassword').value;
+  var pw2 = document.getElementById('regPassword2').value;
+  if(!isValidEmail(email)) return authError('Email chưa đúng định dạng. Anh kiểm tra lại giúp em nhé.');
+  if(pw.length < 6) return authError('Mật khẩu phải có tối thiểu 6 ký tự.');
+  if(pw !== pw2) return authError('Hai lần nhập mật khẩu chưa khớp nhau.');
+  if(findAccount(email)) return authError('Email này đã được đăng ký trên máy này rồi. Anh bấm Đăng nhập nhé.');
+  var btn = document.getElementById('registerBtn'); btn.disabled = true; btn.textContent = 'Đang tạo tài khoản…';
+  hashPasswordNew(pw).then(function(h){
+    var accounts = loadAccounts();
+    accounts.push({email:email, displayName:name, salt:h.salt, hash:h.hash, iterations:h.iterations, algo:h.algo, createdAt:new Date().toISOString()});
+    saveAccounts(accounts);
+    btn.disabled = false; btn.textContent = 'Tạo tài khoản';
+    setSession(email);
+    enterApp(email);
+  }).catch(function(e){ btn.disabled = false; btn.textContent = 'Tạo tài khoản'; authError('Không tạo được tài khoản: ' + e.message); });
+}
+function doLogin(){
+  authError('');
+  var email = normalizeEmail(document.getElementById('loginEmail').value);
+  var pw = document.getElementById('loginPassword').value;
+  if(!isValidEmail(email)) return authError('Email chưa đúng định dạng. Anh kiểm tra lại giúp em nhé.');
+  if(!pw) return authError('Anh chưa nhập mật khẩu.');
+  var account = findAccount(email);
+  if(!account) return authError('Chưa có tài khoản với email này trên máy. Anh bấm Đăng ký mới nhé.');
+  var btn = document.getElementById('loginBtn'); btn.disabled = true; btn.textContent = 'Đang kiểm tra…';
+  verifyPassword(account, pw).then(function(ok){
+    btn.disabled = false; btn.textContent = 'Đăng nhập';
+    if(!ok) return authError('Mật khẩu chưa đúng. Anh kiểm tra lại giúp em nhé.');
+    setSession(email);
+    enterApp(email);
+  }).catch(function(e){ btn.disabled = false; btn.textContent = 'Đăng nhập'; authError('Không đăng nhập được: ' + e.message); });
+}
+function enterApp(email){
+  currentUser = email;
+  DATA_KEY = accountDataKey(email);
+  var claimed = claimLegacyData();
+  state = loadState();
+  saveState(); // tai khoan moi: ghi ngay khoa du lieu rieng (2 vi mac dinh, du lieu rong)
+  hideGate();
+  renderAccountCard();
+  renderAll();
+  if(claimed) setTimeout(function(){ alert('Đã nhận dữ liệu Sổ Thu Chi có sẵn trên máy này vào tài khoản ' + email + '. Từ nay dữ liệu đó thuộc về tài khoản này.'); }, 300);
+}
+function doLogout(){
+  if(!confirm('Đăng xuất khỏi tài khoản trên máy này? Dữ liệu vẫn còn nguyên trên máy, đăng nhập lại là thấy.')) return;
+  clearSession(); currentUser = null; DATA_KEY = null;
+  location.reload();
+}
+function renderAccountCard(){
+  var a = currentUser ? findAccount(currentUser) : null;
+  if(!a) return;
+  document.getElementById('acctName').textContent = a.displayName || '(chưa đặt tên hiển thị)';
+  document.getElementById('acctEmail').textContent = a.email;
+  document.getElementById('acctNewName').value = a.displayName || '';
+}
+function changeDisplayName(){
+  if(!currentUser) return;
+  var name = document.getElementById('acctNewName').value.trim();
+  var accounts = loadAccounts();
+  for(var i=0;i<accounts.length;i++){ if(accounts[i].email === currentUser){ accounts[i].displayName = name; break; } }
+  saveAccounts(accounts);
+  renderAccountCard();
+  alert('Đã lưu tên hiển thị mới.');
+}
+function changePassword(){
+  if(!currentUser) return;
+  var oldPw = document.getElementById('acctOldPass').value;
+  var newPw = document.getElementById('acctNewPass').value;
+  var newPw2 = document.getElementById('acctNewPass2').value;
+  if(newPw.length < 6) return alert('Mật khẩu mới phải có tối thiểu 6 ký tự.');
+  if(newPw !== newPw2) return alert('Hai lần nhập mật khẩu mới chưa khớp nhau.');
+  var account = findAccount(currentUser);
+  verifyPassword(account, oldPw).then(function(ok){
+    if(!ok) return alert('Mật khẩu hiện tại chưa đúng, anh kiểm tra lại giúp em.');
+    return hashPasswordNew(newPw).then(function(h){
+      var accounts = loadAccounts();
+      for(var i=0;i<accounts.length;i++){
+        if(accounts[i].email === currentUser){
+          accounts[i].salt = h.salt; accounts[i].hash = h.hash; accounts[i].iterations = h.iterations; accounts[i].algo = h.algo;
+          accounts[i].passwordChangedAt = new Date().toISOString();
+          break;
+        }
+      }
+      saveAccounts(accounts);
+      document.getElementById('acctOldPass').value = ''; document.getElementById('acctNewPass').value = ''; document.getElementById('acctNewPass2').value = '';
+      alert('Đã đổi mật khẩu thành công.');
+    });
+  }).catch(function(e){ alert('Không đổi được mật khẩu: ' + e.message); });
+}
+function initApp(){
+  var email = getSessionEmail();
+  if(email) enterApp(email);
+  else { clearSession(); showGate(); }
+}
+
 /* ---------- DỮ LIỆU ---------- */
 function exportData(){
   var blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
@@ -813,16 +1114,17 @@ function exportData(){
   setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
 }
 function resetData(){
-  if(!confirm('Xoá TOÀN BỘ dữ liệu trên máy này? Hành động này không hoàn tác.')) return;
-  localStorage.removeItem(STORAGE_KEY); state = defaultState(); saveState(); renderAll();
+  if(!confirm('Xoá TOÀN BỘ dữ liệu của tài khoản đang đăng nhập trên máy này? Hành động này không hoàn tác.')) return;
+  if(DATA_KEY) localStorage.removeItem(DATA_KEY); state = defaultState(); saveState(); renderAll();
 }
 
 function renderAll(){
+  if(!currentUser){ showGate(); return; } // chua dang nhap: khong render bat ky du lieu tai chinh nao
   fillWalletOptions(); fillCategoryOptions();
   document.getElementById('budgetCategory').innerHTML = EXPENSE_CATS.map(function(c){ return '<option>'+c+'</option>'; }).join('');
   renderDashboard(); renderTransactions(); renderBudgets(); renderAssets(); renderGoals(); renderJars();
 }
-renderAll();
+initApp();
 </script>
 </body>
 </html>
