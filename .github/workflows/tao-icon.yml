@@ -1,0 +1,84 @@
+name: Tao icon PNG cho ban web
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/tao-icon.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  tao-icon:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tai nhanh gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Cai Pillow
+        run: pip install pillow
+
+      - name: Ve icon PNG va cap nhat khai bao icon
+        run: |
+          python3 - <<'PYEOF'
+          from PIL import Image, ImageDraw, ImageFont
+          import json
+
+          TOP = (20, 184, 166)    # teal sang
+          BOT = (15, 118, 110)    # teal dam (theme cua app)
+
+          def make_icon(size, path):
+              img = Image.new('RGB', (size, size))
+              px = img.load()
+              for y in range(size):
+                  t = y / max(size - 1, 1)
+                  r = int(TOP[0] + (BOT[0] - TOP[0]) * t)
+                  g = int(TOP[1] + (BOT[1] - TOP[1]) * t)
+                  b = int(TOP[2] + (BOT[2] - TOP[2]) * t)
+                  for x in range(size):
+                      px[x, y] = (r, g, b)
+              d = ImageDraw.Draw(img)
+              font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', int(size * 0.62))
+              ch = '\u20ab'
+              box = d.textbbox((0, 0), ch, font=font)
+              w = box[2] - box[0]
+              h = box[3] - box[1]
+              d.text(((size - w) / 2 - box[0], (size - h) / 2 - box[1]), ch, font=font, fill=(255, 255, 255))
+              img.save(path, 'PNG')
+              print('Da tao', path, size)
+
+          make_icon(180, 'gh-pages/apple-touch-icon.png')
+          make_icon(192, 'gh-pages/icon-192.png')
+          make_icon(512, 'gh-pages/icon-512.png')
+
+          # index.html: tro apple-touch-icon sang file PNG (iOS khong nhan SVG)
+          p = 'gh-pages/index.html'
+          html = open(p, encoding='utf-8').read()
+          html = html.replace('rel="apple-touch-icon" href="icon.svg"',
+                              'rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png"')
+          open(p, 'w', encoding='utf-8').write(html)
+
+          # manifest: them icon PNG ben canh SVG
+          mp = 'gh-pages/manifest.webmanifest'
+          m = json.load(open(mp, encoding='utf-8'))
+          m['icons'] = [
+              {'src': 'icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},
+              {'src': 'icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any maskable'},
+              {'src': 'icon.svg', 'sizes': 'any', 'type': 'image/svg+xml', 'purpose': 'any maskable'},
+          ]
+          json.dump(m, open(mp, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+          print('Da cap nhat index.html va manifest')
+          PYEOF
+
+      - name: Day icon len nhanh gh-pages
+        run: |
+          cd gh-pages
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add apple-touch-icon.png icon-192.png icon-512.png index.html manifest.webmanifest
+          git diff --cached --quiet || git commit -m 'Them icon PNG chuan iOS cho ban web'
+          git push
